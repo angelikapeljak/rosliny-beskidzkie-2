@@ -1,17 +1,27 @@
 import random
 import pandas as pd
 import streamlit as st
+import glob
+import os
 
 st.title("🌱 Rozpoznaj Beskidzkie Rośliny")
 
 
 # 1. Load data (cached for performance)
-@st.cache_data
 def load_data():
-    df = pd.read_csv("plants.csv")
-    # Filter out rows that don't have an image assigned
-    df = df.dropna(subset=["image_file"])
-    return df
+  df = pd.read_csv("plants.csv")
+  df = df.dropna(subset=["id"])
+
+  # Filtrujemy tylko te wiersze, dla których istnieje plik graficzny pasujący do ID
+  valid_rows = []
+  for _, row in df.iterrows():
+    pid = str(row["id"])
+    # Szuka plików w folderze images/ zaczynających się od ID (np. XX.jpg, XX_yy.jpg)
+    matches = glob.glob(os.path.join("images", f"{pid}*"))
+    if matches:
+      valid_rows.append(row)
+
+  return pd.DataFrame(valid_rows)
 
 df = load_data()
 total_plants = len(df)
@@ -81,12 +91,13 @@ if len(st.session_state.seen_plants) >= total_plants and (
     st.rerun()
 
 elif st.session_state.current_plant is not None:
-  plant = st.session_state.current_plant
-  img_path = f"images/{plant['image_file']}"
-
-  # Progress bar / counter in sidebar
-  current_progress = len(st.session_state.seen_plants)
-  st.sidebar.progress(
+    plant = st.session_state.current_plant
+    pid = str(plant["id"])
+    matches = glob.glob(os.path.join("images", f"{pid}*"))
+    img_path = matches[0] if matches else None
+    # Progress bar / counter in sidebar
+    current_progress = len(st.session_state.seen_plants)
+    st.sidebar.progress(
       current_progress / total_plants,
       text=(
           f"Progress: {current_progress}/{total_plants} (Score:"
@@ -94,13 +105,15 @@ elif st.session_state.current_plant is not None:
       ),
   )
 
-  # Display the image
-  try:
+try:
+  if img_path:
     st.image(img_path, width=400)
-  except Exception:
-    st.warning(
-        f"Nie można załadować zdjęcia. Sprawdź ścieżkę w pliku plants.csv."
-    )
+  else:
+    raise FileNotFoundError
+except Exception:
+  st.warning(
+      f"Nie można załadować zdjęcia dla ID: {pid}. Sprawdź folder 'images'."
+  )
 
   # Quiz Form / Options
   with st.form("quiz_form"):
