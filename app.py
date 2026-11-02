@@ -60,7 +60,8 @@ def get_next_question():
 
   # Pick 3 wrong options from the rest of the dataset sharing the same category
   same_category_df = df[
-      (df["category"] == plant_category) & (df["name"] != correct_name]
+      (df["category"] == plant_category) & (df["name"] != correct_name)
+  ]
 
   # Fallback just in case there are fewer than 3 plants in the same category
   if len(same_category_df) < 3:
