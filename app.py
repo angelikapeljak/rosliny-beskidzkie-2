@@ -1,13 +1,14 @@
+import glob
+import os
 import random
 import pandas as pd
 import streamlit as st
-import glob
-import os
 
 st.title("🌱 Rozpoznaj Beskidzkie Rośliny")
 
 
 # 1. Load data (cached for performance)
+@st.cache_data
 def load_data():
   df = pd.read_csv("plants.csv")
   df = df.dropna(subset=["id"])
@@ -22,6 +23,7 @@ def load_data():
       valid_rows.append(row)
 
   return pd.DataFrame(valid_rows)
+
 
 df = load_data()
 total_plants = len(df)
@@ -90,14 +92,15 @@ if len(st.session_state.seen_plants) >= total_plants and (
     st.session_state.current_plant = None
     st.rerun()
 
-  elif st.session_state.current_plant is not None:
-    plant = st.session_state.current_plant
-    pid = str(plant["id"])
-    matches = glob.glob(os.path.join("images", f"{pid}*"))
-    img_path = matches[0] if matches else None
-    # Progress bar / counter in sidebar
-    current_progress = len(st.session_state.seen_plants)
-    st.sidebar.progress(
+elif st.session_state.current_plant is not None:
+  plant = st.session_state.current_plant
+  pid = str(plant["id"])
+  matches = glob.glob(os.path.join("images", f"{pid}*"))
+  img_path = matches[0] if matches else None
+
+  # Progress bar / counter in sidebar
+  current_progress = len(st.session_state.seen_plants)
+  st.sidebar.progress(
       current_progress / total_plants,
       text=(
           f"Progress: {current_progress}/{total_plants} (Score:"
@@ -105,15 +108,15 @@ if len(st.session_state.seen_plants) >= total_plants and (
       ),
   )
 
-try:
-  if img_path:
-    st.image(img_path, width=400)
-  else:
-    raise FileNotFoundError
-except Exception:
-  st.warning(
-      f"Nie można załadować zdjęcia dla ID: {pid}. Sprawdź folder 'images'."
-  )
+  try:
+    if img_path:
+      st.image(img_path, width=400)
+    else:
+      raise FileNotFoundError
+  except Exception:
+    st.warning(
+        f"Nie można załadować zdjęcia dla ID: {pid}. Sprawdź folder 'images'."
+    )
 
   # Quiz Form / Options
   with st.form("quiz_form"):
