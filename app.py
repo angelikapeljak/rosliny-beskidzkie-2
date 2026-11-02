@@ -56,11 +56,19 @@ def get_next_question():
   st.session_state.current_plant = plant_row
 
   correct_name = plant_row["name"]
+  plant_category = plant_row["category"]
 
-  # Pick 3 wrong options from the rest of the dataset
-  wrong_options = df[df["name"] != correct_name].sample(
-      min(3, len(df) - 1)
-  )
+  # Pick 3 wrong options from the rest of the dataset sharing the same category
+  same_category_df = df[
+      (df["category"] == plant_category) & (df["name"] != correct_name]
+
+  # Fallback just in case there are fewer than 3 plants in the same category
+  if len(same_category_df) < 3:
+    wrong_options = df[df["name"] != correct_name].sample(
+        min(3, len(df) - 1)
+    )
+  else:
+    wrong_options = same_category_df.sample(3)
 
   # Combine and shuffle options
   options = list(wrong_options["name"]) + [correct_name]
