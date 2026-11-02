@@ -90,7 +90,7 @@ if len(st.session_state.seen_plants) >= total_plants and (
     st.session_state.current_plant = None
     st.rerun()
 
-elif st.session_state.current_plant is not None:
+  elif st.session_state.current_plant is not None:
     plant = st.session_state.current_plant
     pid = str(plant["id"])
     matches = glob.glob(os.path.join("images", f"{pid}*"))
